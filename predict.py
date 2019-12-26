@@ -31,7 +31,7 @@ def model():
                   metrics=['accuracy'])
     return model
 
-def one_to_hot(team):
+def one_to_hot(team):   
     global dict
     ar=np.zeros((len(dict)), dtype=np.uint)
     teamnr=dict.get(team)
@@ -54,31 +54,51 @@ def one_hot_res(result):
 # download(url,csv)
 # download('http://www.football-data.co.uk/fixtures.csv','data/fixtures.csv')
 
+# files = [
+#             'data/E0_2019.csv','data/E0_2018.csv',
+#             'data/E0_2017.csv','data/E0_2016.csv',
+#             'data/E0_2015.csv','data/E1_2019.csv',
+#             'data/E1_2018.csv','data/E1_2017.csv',
+#             'data/E1_2016.csv','data/E1_2015.csv'
+#         ]
+files = ['data/E0_2018.csv',]
+
+fixture_file = 'data/fixtures_new.csv'
+
 dict={}
 dict_rev={}
-df = pd.read_csv('data/E0.csv')
-dx = pd.read_csv('data/fixtures_new.csv')
 
-cols = ['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']
+def get_df(files):
+    frames = []
+    cols = ['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']
+    
+    for file in files:
+        df = pd.read_csv(file)
+        df = df[cols]
+        frames.append(df)
+    
+    result = pd.concat(frames)
+    return result
 
-# df = df[cols]
-# dx = dx[cols]
+def get_dx(file):
+    cols = ['HomeTeam', 'AwayTeam', 'FTHG', 'FTAG', 'FTR']
+    dx = pd.read_csv(file)
+    dx = dx[cols]
+    return dx
 
-df = df.reindex(columns = cols)
-dx = dx.reindex(columns = cols)
-
-# print(df[:5])
-
-# df.drop(df.columns[[0,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,25,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51]], axis=1, inplace=True)
-# dx.drop(dx.columns[[0,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26,25,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48]], axis=1, inplace=True)
+df = get_df(files)
+dx = get_dx(fixture_file)
 
 
+index = 0
+for item in enumerate(df['HomeTeam']):
+    team_name = item[1]
+    if not (dict.__contains__(team_name)):
+        dict[team_name]=index
+        dict_rev[index]=team_name
+        index += 1
 
-
-for i,t in enumerate(df['HomeTeam']):
-    if t not in dict:
-        dict[t]=i
-        dict_rev[i]=t
+# print(dict)
 x=np.zeros((len(df),2,len(dict)), dtype=np.uint)
 y=np.zeros((len(df),3),dtype=np.float32)
 x_pred=np.zeros((len(dx),2,len(dict)),dtype=np.uint)
@@ -87,8 +107,8 @@ x_pred=np.zeros((len(dx),2,len(dict)),dtype=np.uint)
 
 for a,b in df.iterrows():
     home=b[0]
-
     away=b[1]
+
     x[a,0,:]=one_to_hot(home)
     x[a,1, :] = one_to_hot(away)
     result=b[4]
